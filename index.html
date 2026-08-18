@@ -31,9 +31,7 @@
         /* 大象圖片與定位容器 */
         #elephant-wrapper {
             position: absolute;
-            /* ✨ 關鍵修改：將 top 由 50% 改為 62%，讓大象整體往下移踩在草地上 */
-            /* 如果草地更低或更高，你可以隨時微調這個 62% 的數值 (例如 65% 會更低，55% 會高一點) */
-            top: 62%; 
+            top: 62%; /* 大象站在草地上的高度 */
             left: 50%;
             transform: translate(-50%, -50%);
             height: 85vh; 
@@ -46,7 +44,8 @@
             height: 100%;
             width: 100%;
             object-fit: contain;
-            mix-blend-mode: multiply; /* CSS 去底魔法：自動過濾白底，完美融入背景 */
+            /* ⚠️ 強制去底魔法：這裡會自動過濾掉圖片的純白背景 ⚠️ */
+            mix-blend-mode: multiply; 
         }
 
         /* SVG 安全道路路徑 (半透明引導線) */
@@ -60,7 +59,7 @@
             pointer-events: none;
         }
 
-        /* 起點：對準雙眼中間 */
+        /* 🟢 修正：起點提高至兩眉中間 */
         #start-point {
             position: absolute;
             width: 45px;
@@ -71,11 +70,11 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 6;
-            top: 48%; 
+            top: 38%; /* 由原本的 48% 提高至 38% */
             left: 44%;
         }
 
-        /* 終點：對準往左下捲的鼻子末端 */
+        /* 終點：保持在鼻子末端 */
         #end-point {
             position: absolute;
             width: 60px;
@@ -125,9 +124,10 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             z-index: 30;
             display: flex;
+            flex-direction: column; /* 讓文字和按鈕垂直排列 */
             justify-content: center;
             align-items: center;
             opacity: 0;
@@ -137,12 +137,15 @@
 
         #reward-screen.show {
             opacity: 1;
+            pointer-events: auto; /* 顯示時允許點擊按鈕 */
         }
 
         #reward-text {
             font-size: 6vw;
             color: #ff4757;
             font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
             text-shadow: 3px 3px 0 #fff, 5px 5px 10px rgba(0,0,0,0.2);
             transform: scale(0.5);
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -152,9 +155,32 @@
             transform: scale(1);
         }
 
+        /* 🟢 新增：再玩一次按鈕樣式 */
+        #restart-btn {
+            display: none; /* 預設隱藏 */
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 28px;
+            font-family: "Comic Sans MS", "微軟正黑體", sans-serif;
+            font-weight: bold;
+            color: white;
+            background-color: #4cd137;
+            border: 4px solid #fff;
+            border-radius: 50px;
+            box-shadow: 0 6px 0 #44bd32, 0 10px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #restart-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #44bd32, 0 4px 6px rgba(0,0,0,0.2);
+        }
+
         @media (max-width: 768px) {
-            #reward-text { font-size: 10vw; }
+            #reward-text { font-size: 12vw; }
             #stars-container { font-size: 35px; }
+            #restart-btn { font-size: 24px; padding: 12px 30px; }
         }
     </style>
 </head>
@@ -175,10 +201,11 @@
         <div id="elephant-wrapper">
             <img id="elephant" src="9.png" alt="大象">
             
-            <!-- 半透明安全道路路徑 (SVG) -->
+            <!-- 🟢 修正：延長半透明安全道路路徑 -->
             <svg id="guide-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <path d="M 44 48 C 42 60, 32 65, 22 60" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
-                <path d="M 44 48 C 42 60, 32 65, 22 60" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
+                <!-- 路徑起點 M 的 Y 座標由 48 改為 38，配合起點高度 -->
+                <path d="M 44 38 C 43 55, 32 65, 22 60" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
+                <path d="M 44 38 C 43 55, 32 65, 22 60" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
             </svg>
 
             <div id="start-point"></div>
@@ -188,6 +215,8 @@
         <!-- 獎勵畫面 -->
         <div id="reward-screen">
             <div id="reward-text">✨ 你真努力！</div>
+            <!-- 🟢 新增：再玩一次按鈕 -->
+            <button id="restart-btn">再玩一次</button>
         </div>
     </div>
 
@@ -198,6 +227,7 @@
         const endElement = document.getElementById('end-point');
         const rewardScreen = document.getElementById('reward-screen');
         const rewardText = document.getElementById('reward-text');
+        const restartBtn = document.getElementById('restart-btn');
 
         let isDrawing = false;
         let progress = 0;
@@ -275,10 +305,13 @@
             document.getElementById(`star-${progress}`).classList.add('active');
 
             if (progress >= maxProgress) {
-                rewardText.innerText = "🎉 太棒了！全部完成！";
+                // 🟢 修正：5次完成後的文字與顯示按鈕
+                rewardText.innerText = "欣賞你！真努力";
+                restartBtn.style.display = 'block';
                 rewardScreen.classList.add('show');
             } else {
-                rewardText.innerText = "✨ 你真努力！";
+                // 單次成功
+                rewardText.innerText = "✨ 好棒！";
                 rewardScreen.classList.add('show');
                 
                 setTimeout(() => {
@@ -287,6 +320,20 @@
                 }, 1500);
             }
         }
+
+        // 🟢 新增：點擊再玩一次按鈕的重置邏輯
+        restartBtn.addEventListener('click', () => {
+            progress = 0;
+            // 熄滅所有星星
+            document.querySelectorAll('.star').forEach(star => {
+                star.classList.remove('active');
+            });
+            // 隱藏獎勵畫面與按鈕
+            rewardScreen.classList.remove('show');
+            restartBtn.style.display = 'none';
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
     </script>
 </body>
 </html>
