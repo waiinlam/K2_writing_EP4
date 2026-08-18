@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>畫大象鼻子</title>
+    <style>
+        /* 基礎重置與防誤觸設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            touch-action: none; /* 鎖定畫布，防止手機/平板滑動干擾 */
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Comic Sans MS", "微軟正黑體", sans-serif;
+            background: url('7.png') no-repeat center center;
+            background-size: cover;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 大象圖片與定位容器 */
+        #elephant-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 80vh; /* 自動適應螢幕高度 */
+            max-width: 95vw;
+            pointer-events: none; /* 讓點擊事件穿透，交由 canvas 處理 */
+        }
+
+        #elephant {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+            mix-blend-mode: multiply; /* 去除純白背景 */
+        }
+
+        /* 起點：大象雙眼之間 */
+        #start-point {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #ff4757;
+            border: 4px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            /* 請根據 9.png 的實際比例微調 top 和 left 的百分比 */
+            top: 30%; 
+            left: 50%;
+        }
+
+        /* 終點：黃色閃爍光圈 */
+        #end-point {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 234, 0, 0.4);
+            border: 4px solid #ffd32a;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            /* 請根據 9.png 的實際比例微調 top 和 left 的百分比 */
+            top: 75%; 
+            left: 50%;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px #ffd32a, inset 0 0 10px #ffd32a; transform: translate(-50%, -50%) scale(1); }
+            100% { box-shadow: 0 0 30px #ff9f43, inset 0 0 20px #ff9f43; transform: translate(-50%, -50%) scale(1.15); }
+        }
+
+        /* 繪圖畫布 */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        /* 進度星星 */
+        #stars-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            font-size: 40px;
+            color: #ccc; /* 未獲得的星星顏色 */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .star.active {
+            color: #ffd32a; /* 獲得的星星顏色 */
+        }
+
+        /* 獎勵動畫遮罩 */
+        #reward-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #reward-screen.show {
+            opacity: 1;
+        }
+
+        #reward-text {
+            font-size: 6vw;
+            color: #ff4757;
+            font-weight: bold;
+            text-shadow: 3px 3px 0 #fff, 5px 5px 10px rgba(0,0,0,0.2);
+            transform: scale(0.5);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #reward-screen.show #reward-text {
+            transform: scale(1);
+        }
+
+        @media (max-width: 768px) {
+            #reward-text { font-size: 10vw; }
+            #stars-container { font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 左上角進度 -->
+        <div id="stars-container">
+            <span class="star" id="star-1">★</span>
+            <span class="star" id="star-2">★</span>
+            <span class="star" id="star-3">★</span>
+            <span class="star" id="star-4">★</span>
+            <span class="star" id="star-5">★</span>
+        </div>
+
+        <canvas id="drawing-canvas"></canvas>
+
+        <div id="elephant-wrapper">
+            <img id="elephant" src="9.png" alt="大象">
+            <div id="start-point"></div>
+            <div id="end-point"></div>
+        </div>
+
+        <!-- 獎勵畫面 -->
+        <div id="reward-screen">
+            <div id="reward-text">✨ 你真努力！</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        const startElement = document.getElementById('start-point');
+        const endElement = document.getElementById('end-point');
+        const rewardScreen = document.getElementById('reward-screen');
+        const rewardText = document.getElementById('reward-text');
+
+        let isDrawing = false;
+        let progress = 0;
+        const maxProgress = 5;
+        
+        // K2 小朋友操作容錯範圍 (像素)
+        const hitRadius = 70; 
+
+        // 確保 Canvas 尺寸與螢幕一致
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // 設定粗實線樣式
+            ctx.lineWidth = 18;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#4a69bd'; // 柔和的藍色線條
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 獲取元素的中心點座標 (相對於視窗)
+        function getCenter(el) {
+            const rect = el.getBoundingClientRect();
+            return {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }
+
+        // 計算兩點距離
+        function getDistance(x1, y1, x2, y2) {
+            return Math.hypot(x2 - x1, y2 - y1);
+        }
+
+        // 綁定 Pointer Events
+        canvas.addEventListener('pointerdown', (e) => {
+            if (progress >= maxProgress) return;
+
+            const startPos = getCenter(startElement);
+            const dist = getDistance(e.clientX, e.clientY, startPos.x, startPos.y);
+
+            // 如果點擊位置在起點附近
+            if (dist < hitRadius) {
+                isDrawing = true;
+                ctx.beginPath();
+                // 為了視覺效果，讓線條從起點正中心開始
+                ctx.moveTo(startPos.x, startPos.y);
+            }
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return;
+            // 繪製路徑
+            ctx.lineTo(e.clientX, e.clientY);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            const endPos = getCenter(endElement);
+            const dist = getDistance(e.clientX, e.clientY, endPos.x, endPos.y);
+
+            if (dist < hitRadius) {
+                // 成功連線！
+                handleSuccess();
+            } else {
+                // 失敗：清空畫布重來
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // 取消繪製 (滑出螢幕等情況)
+        canvas.addEventListener('pointercancel', () => {
+            if (isDrawing) {
+                isDrawing = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        function handleSuccess() {
+            progress++;
+            
+            // 點亮星星
+            document.getElementById(`star-${progress}`).classList.add('active');
+
+            if (progress >= maxProgress) {
+                // 最終獎勵
+                rewardText.innerText = "🎉 太棒了！全部完成！";
+                rewardScreen.classList.add('show');
+            } else {
+                // 單次成功獎勵
+                rewardText.innerText = "✨ 你真努力！";
+                rewardScreen.classList.add('show');
+                
+                // 1.5 秒後關閉獎勵並清空畫布，準備下一次
+                setTimeout(() => {
+                    rewardScreen.classList.remove('show');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>
