@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>畫大象鼻子</title>
+    <title>畫大象鼻子 - 運筆練習</title>
     <style>
         /* 基礎重置與防誤觸設定 */
         * {
@@ -34,34 +34,36 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            height: 80vh; /* 自動適應螢幕高度 */
+            /* 根據 9.jpg 的直式比例調整容器，確保座標精準定位 */
+            height: 85vh; 
+            aspect-ratio: 3 / 4; 
             max-width: 95vw;
-            pointer-events: none; /* 讓點擊事件穿透，交由 canvas 處理 */
+            pointer-events: none;
         }
 
         #elephant {
             height: 100%;
-            width: auto;
+            width: 100%;
             object-fit: contain;
-            mix-blend-mode: multiply; /* 去除純白背景 */
+            mix-blend-mode: multiply; /* 完美去除 JPG 的純白背景 */
         }
 
-        /* 起點：大象雙眼之間 */
+        /* 起點：大象雙眼中間 */
         #start-point {
             position: absolute;
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             background-color: #ff4757;
             border: 4px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            /* 請根據 9.png 的實際比例微調 top 和 left 的百分比 */
-            top: 30%; 
-            left: 50%;
+            /* 對準 9.jpg 雙眼中間 */
+            top: 48.5%; 
+            left: 44.5%;
         }
 
-        /* 終點：黃色閃爍光圈 */
+        /* 終點：鼻子末端 (黃色閃爍光圈) */
         #end-point {
             position: absolute;
             width: 60px;
@@ -70,9 +72,9 @@
             border: 4px solid #ffd32a;
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            /* 請根據 9.png 的實際比例微調 top 和 left 的百分比 */
-            top: 75%; 
-            left: 50%;
+            /* 對準 9.jpg 鼻子末端 */
+            top: 59%; 
+            left: 23%;
             animation: pulse 1s infinite alternate;
         }
 
@@ -95,13 +97,13 @@
             top: 20px;
             left: 20px;
             z-index: 20;
-            font-size: 40px;
-            color: #ccc; /* 未獲得的星星顏色 */
+            font-size: 45px;
+            color: #ccc;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .star.active {
-            color: #ffd32a; /* 獲得的星星顏色 */
+            color: #ffd32a;
         }
 
         /* 獎勵動畫遮罩 */
@@ -140,7 +142,7 @@
 
         @media (max-width: 768px) {
             #reward-text { font-size: 10vw; }
-            #stars-container { font-size: 30px; }
+            #stars-container { font-size: 35px; }
         }
     </style>
 </head>
@@ -159,7 +161,8 @@
         <canvas id="drawing-canvas"></canvas>
 
         <div id="elephant-wrapper">
-            <img id="elephant" src="9.png" alt="大象">
+            <!-- 替換為 9.jpg -->
+            <img id="elephant" src="9.jpg" alt="大象">
             <div id="start-point"></div>
             <div id="end-point"></div>
         </div>
@@ -183,24 +186,22 @@
         const maxProgress = 5;
         
         // K2 小朋友操作容錯範圍 (像素)
-        const hitRadius = 70; 
+        const hitRadius = 75; 
 
-        // 確保 Canvas 尺寸與螢幕一致
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
             // 設定粗實線樣式
-            ctx.lineWidth = 18;
+            ctx.lineWidth = 22; // 稍微加粗，讓「撇」的視覺更明顯
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#4a69bd'; // 柔和的藍色線條
+            ctx.strokeStyle = '#4a69bd'; 
         }
 
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // 獲取元素的中心點座標 (相對於視窗)
         function getCenter(el) {
             const rect = el.getBoundingClientRect();
             return {
@@ -209,30 +210,25 @@
             };
         }
 
-        // 計算兩點距離
         function getDistance(x1, y1, x2, y2) {
             return Math.hypot(x2 - x1, y2 - y1);
         }
 
-        // 綁定 Pointer Events
         canvas.addEventListener('pointerdown', (e) => {
             if (progress >= maxProgress) return;
 
             const startPos = getCenter(startElement);
             const dist = getDistance(e.clientX, e.clientY, startPos.x, startPos.y);
 
-            // 如果點擊位置在起點附近
             if (dist < hitRadius) {
                 isDrawing = true;
                 ctx.beginPath();
-                // 為了視覺效果，讓線條從起點正中心開始
                 ctx.moveTo(startPos.x, startPos.y);
             }
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
-            // 繪製路徑
             ctx.lineTo(e.clientX, e.clientY);
             ctx.stroke();
         });
@@ -245,15 +241,12 @@
             const dist = getDistance(e.clientX, e.clientY, endPos.x, endPos.y);
 
             if (dist < hitRadius) {
-                // 成功連線！
                 handleSuccess();
             } else {
-                // 失敗：清空畫布重來
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         });
 
-        // 取消繪製 (滑出螢幕等情況)
         canvas.addEventListener('pointercancel', () => {
             if (isDrawing) {
                 isDrawing = false;
@@ -263,20 +256,15 @@
 
         function handleSuccess() {
             progress++;
-            
-            // 點亮星星
             document.getElementById(`star-${progress}`).classList.add('active');
 
             if (progress >= maxProgress) {
-                // 最終獎勵
                 rewardText.innerText = "🎉 太棒了！全部完成！";
                 rewardScreen.classList.add('show');
             } else {
-                // 單次成功獎勵
                 rewardText.innerText = "✨ 你真努力！";
                 rewardScreen.classList.add('show');
                 
-                // 1.5 秒後關閉獎勵並清空畫布，準備下一次
                 setTimeout(() => {
                     rewardScreen.classList.remove('show');
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
