@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>畫大象鼻子 - 運筆練習 (撇)</title>
     <style>
-        /* 基礎重置與防誤觸設定 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -31,7 +30,7 @@
         /* 大象圖片與定位容器 */
         #elephant-wrapper {
             position: absolute;
-            top: 62%; /* 大象站在草地上的高度 */
+            top: 62%; 
             left: 50%;
             transform: translate(-50%, -50%);
             height: 85vh; 
@@ -44,11 +43,9 @@
             height: 100%;
             width: 100%;
             object-fit: contain;
-            /* ⚠️ 強制去底魔法：這裡會自動過濾掉圖片的純白背景 ⚠️ */
-            mix-blend-mode: multiply; 
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
         }
 
-        /* SVG 安全道路路徑 (半透明引導線) */
         #guide-svg {
             position: absolute;
             top: 0;
@@ -59,7 +56,7 @@
             pointer-events: none;
         }
 
-        /* 🟢 修正：起點提高至兩眉中間 */
+        /* 🟢 修正：起點稍微向下微調，維持在兩眉之間 */
         #start-point {
             position: absolute;
             width: 45px;
@@ -70,11 +67,11 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 6;
-            top: 38%; /* 由原本的 48% 提高至 38% */
+            top: 42%; /* 由 38% 微調至 42% */
             left: 44%;
         }
 
-        /* 終點：保持在鼻子末端 */
+        /* 終點：鼻子末端 */
         #end-point {
             position: absolute;
             width: 60px;
@@ -94,7 +91,6 @@
             100% { box-shadow: 0 0 30px #ff9f43, inset 0 0 20px #ff9f43; transform: translate(-50%, -50%) scale(1.15); }
         }
 
-        /* 繪圖畫布 */
         canvas {
             position: absolute;
             top: 0;
@@ -102,7 +98,6 @@
             z-index: 10;
         }
 
-        /* 進度星星 */
         #stars-container {
             position: absolute;
             top: 20px;
@@ -117,7 +112,6 @@
             color: #ffd32a;
         }
 
-        /* 獎勵動畫遮罩 */
         #reward-screen {
             position: absolute;
             top: 0;
@@ -127,7 +121,7 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 30;
             display: flex;
-            flex-direction: column; /* 讓文字和按鈕垂直排列 */
+            flex-direction: column; 
             justify-content: center;
             align-items: center;
             opacity: 0;
@@ -137,7 +131,7 @@
 
         #reward-screen.show {
             opacity: 1;
-            pointer-events: auto; /* 顯示時允許點擊按鈕 */
+            pointer-events: auto; 
         }
 
         #reward-text {
@@ -155,9 +149,8 @@
             transform: scale(1);
         }
 
-        /* 🟢 新增：再玩一次按鈕樣式 */
         #restart-btn {
-            display: none; /* 預設隱藏 */
+            display: none; 
             margin-top: 30px;
             padding: 15px 40px;
             font-size: 28px;
@@ -187,7 +180,6 @@
 <body>
 
     <div id="game-container">
-        <!-- 左上角進度 -->
         <div id="stars-container">
             <span class="star" id="star-1">★</span>
             <span class="star" id="star-2">★</span>
@@ -199,23 +191,21 @@
         <canvas id="drawing-canvas"></canvas>
 
         <div id="elephant-wrapper">
-            <img id="elephant" src="9.png" alt="大象">
+            <!-- 🟢 更新：使用你自己準備好的 9new.png -->
+            <img id="elephant" src="9new.png" alt="大象">
             
-            <!-- 🟢 修正：延長半透明安全道路路徑 -->
             <svg id="guide-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <!-- 路徑起點 M 的 Y 座標由 48 改為 38，配合起點高度 -->
-                <path d="M 44 38 C 43 55, 32 65, 22 60" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
-                <path d="M 44 38 C 43 55, 32 65, 22 60" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
+                <!-- 🟢 修正：引導線的起點 M 配合紅點稍微拉低 (由 38 改為 42) -->
+                <path d="M 44 42 C 43 55, 32 65, 22 60" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
+                <path d="M 44 42 C 43 55, 32 65, 22 60" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
             </svg>
 
             <div id="start-point"></div>
             <div id="end-point"></div>
         </div>
 
-        <!-- 獎勵畫面 -->
         <div id="reward-screen">
             <div id="reward-text">✨ 你真努力！</div>
-            <!-- 🟢 新增：再玩一次按鈕 -->
             <button id="restart-btn">再玩一次</button>
         </div>
     </div>
@@ -305,12 +295,10 @@
             document.getElementById(`star-${progress}`).classList.add('active');
 
             if (progress >= maxProgress) {
-                // 🟢 修正：5次完成後的文字與顯示按鈕
                 rewardText.innerText = "欣賞你！真努力";
                 restartBtn.style.display = 'block';
                 rewardScreen.classList.add('show');
             } else {
-                // 單次成功
                 rewardText.innerText = "✨ 好棒！";
                 rewardScreen.classList.add('show');
                 
@@ -321,17 +309,13 @@
             }
         }
 
-        // 🟢 新增：點擊再玩一次按鈕的重置邏輯
         restartBtn.addEventListener('click', () => {
             progress = 0;
-            // 熄滅所有星星
             document.querySelectorAll('.star').forEach(star => {
                 star.classList.remove('active');
             });
-            // 隱藏獎勵畫面與按鈕
             rewardScreen.classList.remove('show');
             restartBtn.style.display = 'none';
-            // 清空畫布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
     </script>
