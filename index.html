@@ -10,7 +10,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            touch-action: none; /* 鎖定畫布，防止手機/平板滑動干擾 */
+            touch-action: none; 
         }
 
         body, html {
@@ -31,22 +31,22 @@
         /* 大象圖片與定位容器 */
         #elephant-wrapper {
             position: absolute;
-            top: 50%;
+            /* ✨ 關鍵修改：將 top 由 50% 改為 62%，讓大象整體往下移踩在草地上 */
+            /* 如果草地更低或更高，你可以隨時微調這個 62% 的數值 (例如 65% 會更低，55% 會高一點) */
+            top: 62%; 
             left: 50%;
             transform: translate(-50%, -50%);
             height: 85vh; 
-            aspect-ratio: 3 / 4; /* 鎖定比例以確保座標不會因螢幕變形 */
+            aspect-ratio: 3 / 4; 
             max-width: 95vw;
-            pointer-events: none; /* 讓點擊事件穿透，交由 canvas 處理 */
+            pointer-events: none; 
         }
 
         #elephant {
             height: 100%;
             width: 100%;
             object-fit: contain;
-            /* 如果你張 9.png 仲係有白底，可以將下面嗰行嘅 /* 同 */ 刪除，解鎖去底魔法 */
-            /* mix-blend-mode: multiply; */
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); /* 為透明大象增加少少立體感 */
+            mix-blend-mode: multiply; /* CSS 去底魔法：自動過濾白底，完美融入背景 */
         }
 
         /* SVG 安全道路路徑 (半透明引導線) */
@@ -60,7 +60,7 @@
             pointer-events: none;
         }
 
-        /* 起點：大象雙眼中間 */
+        /* 起點：對準雙眼中間 */
         #start-point {
             position: absolute;
             width: 45px;
@@ -71,12 +71,11 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 6;
-            /* 精準對準雙眼中間 */
             top: 48%; 
-            left: 42%;
+            left: 44%;
         }
 
-        /* 終點：鼻子末端 (黃色閃爍光圈) */
+        /* 終點：對準往左下捲的鼻子末端 */
         #end-point {
             position: absolute;
             width: 60px;
@@ -86,9 +85,8 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             z-index: 6;
-            /* 精準對準往左下捲的鼻子末端 */
-            top: 62%; 
-            left: 20%;
+            top: 60%; 
+            left: 22%;
             animation: pulse 1s infinite alternate;
         }
 
@@ -175,18 +173,14 @@
         <canvas id="drawing-canvas"></canvas>
 
         <div id="elephant-wrapper">
-            <!-- 已經將 src 修正為 9.png -->
             <img id="elephant" src="9.png" alt="大象">
             
             <!-- 半透明安全道路路徑 (SVG) -->
             <svg id="guide-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <!-- 粗的半透明白色底層道路 -->
-                <path d="M 42 48 Q 33 58 20 62" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
-                <!-- 中間的黃色虛線引導線 -->
-                <path d="M 42 48 Q 33 58 20 62" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
+                <path d="M 44 48 C 42 60, 32 65, 22 60" fill="none" stroke="rgba(255, 255, 255, 0.6)" stroke-width="6" stroke-linecap="round" />
+                <path d="M 44 48 C 42 60, 32 65, 22 60" fill="none" stroke="#ffd32a" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round" />
             </svg>
 
-            <!-- 修正後的起點與終點 -->
             <div id="start-point"></div>
             <div id="end-point"></div>
         </div>
@@ -209,14 +203,12 @@
         let progress = 0;
         const maxProgress = 5;
         
-        // K2 小朋友操作容錯範圍 (像素)
         const hitRadius = 80; 
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             
-            // 設定畫筆樣式：粗且柔和的藍色，能剛好蓋過路徑引導線
             ctx.lineWidth = 26; 
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -264,7 +256,6 @@
             const endPos = getCenter(endElement);
             const dist = getDistance(e.clientX, e.clientY, endPos.x, endPos.y);
 
-            // 成功條件：鬆開手時的位置在終點光圈附近
             if (dist < hitRadius) {
                 handleSuccess();
             } else {
