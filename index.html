@@ -44,7 +44,9 @@
             height: 100%;
             width: 100%;
             object-fit: contain;
-            mix-blend-mode: multiply; /* CSS 魔法：完美去除 JPG 的純白背景 */
+            /* 如果你張 9.png 仲係有白底，可以將下面嗰行嘅 /* 同 */ 刪除，解鎖去底魔法 */
+            /* mix-blend-mode: multiply; */
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); /* 為透明大象增加少少立體感 */
         }
 
         /* SVG 安全道路路徑 (半透明引導線) */
@@ -173,8 +175,8 @@
         <canvas id="drawing-canvas"></canvas>
 
         <div id="elephant-wrapper">
-            <!-- 繼續使用原本的 JPG，CSS 會自動處理白底 -->
-            <img id="elephant" src="9.jpg" alt="大象">
+            <!-- 已經將 src 修正為 9.png -->
+            <img id="elephant" src="9.png" alt="大象">
             
             <!-- 半透明安全道路路徑 (SVG) -->
             <svg id="guide-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
